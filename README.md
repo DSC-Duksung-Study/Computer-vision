@@ -3,3 +3,4 @@
 
 <h3>블로그 주소</h3>
 - [강수빈](https://ksb0511.tistory.com/)
+- [윤지영](https://ciri7630.tistory.com/)
