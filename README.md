@@ -10,4 +10,4 @@
 - [강수빈](https://ksb0511.tistory.com/)
 - [윤지영](https://ciri7630.tistory.com/)
 
-<h3> https://sunkyoo.github.io/opencv4cvml/ </h3>
+[<h3>컴비전 자료 주소(깃, zip파일 등)</h3>](https://sunkyoo.github.io/opencv4cvml/)
