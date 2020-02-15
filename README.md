@@ -11,8 +11,4 @@
 - [윤지영](https://ciri7630.tistory.com/)
 - [김민진](https://min-jjiny.tistory.com/)
 
-
-#<h2>- 강수빈</h2>
-ch04 - video : camera_in()함수 
-
 [<h3>컴비전 자료 주소(깃, zip파일 등)</h3>](https://sunkyoo.github.io/opencv4cvml/)
