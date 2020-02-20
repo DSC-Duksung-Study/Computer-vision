@@ -1,0 +1,379 @@
+### 1\. 개요
+​
+-   OpenCV 라이브러리에서 가장 많이 사용하는 클래스
+-   일반적인 2차원 행렬뿐 아니라 고차원 행렬 표현 가능, 한 개 이상의 채널을 가질 수 있음.
+-   정수, 실수 등으로 구성된 행렬 또는 벡터, 그레이스케일, 컬러 영상, 경우에 따라 벡터 필드, 포인트 클라우드, 텐서 등 정보 저장 가능
+-   Mat 클래스의 멤버 변수
+    -   Mat::dims : Mat 행렬의 차원을 의미, ex) 영상처럼 2차원 행렬일 경우 값은 2
+    -   Mat::rows : 행렬의 행 개수 - 2차원 행렬일 경우에만 의미있고 3차원 이상일 경우 -1로 저장
+    -   Mat::cols : 행렬의 열 개수 - 2차원 행렬일 경우에만 의미있고 3차원 이상일 경우 -1로 저장
+    -   Mat::size : 3차원 이상의 행렬의 크기 정보 참조
+    -   Mat::data : 행렬의 원소 데이터가 저장되어 있는 메모리 공간을 가리키는 포인터형 멤버 변수
+        -   행렬에 아무것도 저장되어 있지 않다면 Mat::data는 0값
+        -   Mat 클래스의 모든 멤버 변수는 public 접근 지시자로 선언, 외부에서 직접 접근 가능.
+​
+### **CV\_<bit-depth>{U|S|F}**
+​
+-   Mat 행렬의 깊이(매크로 상수로 표현)
+    -   <bit-depth>에는 8, 16, 32, 64의 숫자를 지정, 이는 원소 값 하나의 비트 수를 의미
+    -   {U|S|F}에서 U는 부호 없는 정수형, S는 부호 있는 정수형, F는 부동 소수형을 의미
+-   Mat 행렬 원소는 하나의 값을 가질 수도 있고, 여러 개로 구성된 값을 가질 수도 있음.
+-   Mat 행렬 원소를 구성하는 각각의 값을 채널이라 함.
+-   하나의 행렬을 구성하는 각 채널은 모두 같은 자료형을 사용해야 함.
+​
+### **CV\_<bit-depth>{U|S|F}C(<number\_of\_channels>)**
+​
+-   Mat 객체의 타입 : Mat 행렬의 깊이 정보와 채널 수 정보를 합친 것.
+-   ex) CV\_8UC1 -> unsigned char 자료형을 사용하고 채널이 한 개인 행렬 or 영상
+
+### 2\. 행렬의 생성과 초기화
+
+```
+// 1. Mat 객체 생성
+Mat::Mat(int rows, int cols, int type);		// 세로, 가로 순서로 입력
+Mat::Mat(Size size, int type);				// Size 클래스 내부에 값 지정 시 가로, 세로 순서로 입력
+
+// 2. Mat 객체 생성 - 쓰레기 값 생성 방지
+Mat::Mat(int rows, int cols, int type, const Scalar& s);
+Mat::Mat(Size size, int type, const Scalar& s);
+```
+
+-   type에는 Mat 객체의 타입을 나타내는 매크로 상수를 전달. <- "Mat클래스(1)" 내용 속 ex) CV\_8UC1
+-   Size 클래스의 생성자는 보통 두 개의 인자를 받음. (가로, 세로 순서로 입력)
+-   1처럼 Mat 객체에 행렬의 크기와 타입을 지정하여 생성할 경우, Mat 행렬의 모든 원소는 흔히 쓰레기 값이라고 부르는 임의의 값으로 채워짐.
+-   2처럼 객체를 생성할 경우 모든 원소 값을 초기화 시킬 수 있음.
+-   s : 행렬 원소 초깃값을 설정하는 인자
+-   Scalar 클래스는 4개의 실수 값을 저장할 수 있는 OpenCV 클래스
+    -   주로 영상의 픽셀 값을 표현하는 용도로 사용
+    -   Scalar 클래스가 그레이스케일 영상의 픽셀 값을 표현할 경우 1개의 멤버 변수만 사용
+    -   3채널 컬러 영상의 픽셀 값을 표현할 시에는 3개의 멤버 변수를 사용
+
+---
+
+```
+// 모든 원소가 0으로 초기화된 행렬 생성
+static MatExpr Mat::zeros(int rows, int cols, int type);
+static MatExpr Mat::zeros(Size size, int type);
+
+// 행렬의 모든 원소가 1로 초기화된 행렬 생성
+static MatExpr Mat::ones(int rows, int cols, int type);
+static MatExpr Mat::ones(Size size, int type);
+
+// 단위행렬 생성
+static MatExpr Mat::eyes(int rows, int cols, int type);
+static MatExpr Mat::eyes(Size size, int type);
+```
+
+-   반환값은 초기화된 행렬 표현식
+-   Mat 클래스의 정적 멤버 함수이므로 실제 코드에서 사용할 시 "Mat::"을 붙여 사용
+
+---
+
+```
+// 외부 메모리 공간을 활용하여 Mat 객체 생성
+Mat::Mat(int rows, int cols, int type, void * data, size_t step=AUTO_STEP);
+Mat::Mat(Size size, int type, void * data, size_t step=AUTO_STEP);
+```
+
+-   외부 메모리 공간을 활용하여 객체 생성하면 자체적인 메모리 할당을 수행하지 않고 외부 메모리를 참조하는 방식이기 때문에 객체 생성이 빠름.
+-   ex) 
+
+```
+float data[] = {1, 2, 3, 4, 5, 6};
+Mat mat4(2, 3, CV_32FC1, data);
+```
+
+1.  외부 배열 크기와 생성할 행렬 원소 개수는 같아야 함.
+2.  서로 사용하는 자료형이 같아야 함.
+3.  결론적으로 mat4 행렬은 다음과 같은 형태
+
+[##_Image|kage@kMkkC/btqBPXf0bGv/gEFvp8pKMKoLrwtSLCZQR0/img.png|alignCenter|data-origin-width="266" data-origin-height="111" data-filename="blob" width="223" height="93"|mat4 형태||_##]
+
+-   외부 메모리 공간을 참조하여 Mat 객체를 생성할 경우, Mat 객체의 원소 값과 외부 메모리 공간의 데이터 값은 상호 공유됨. 즉, mat4 객체 생성 후 외부 메모리 공간의 값 변경 시 mat4 행렬의 원소도 같이 변경. 반대로 mat4 행렬의 원소를 변경해도 외부 메모리 공간의 값 변경됨.
+-   동적 할당하여 만든 대용량 메모리도 Mat 클래스에 참조하여 사용가능. But, 동적 할당한 메모리는 Mat 객체가 소멸될 때 자동으로 해제하지 않을 경우 반드시 사용자가 직접 메모리를 해제해야 함.
+-   ex) Mat 객체를 생성하는 방법 - (Mat\_ 클래스를 사용하는 방법)
+
+```
+Mat_<float> mat5_(2, 3);
+mat5_ << 1, 2, 3, 4, 5, 6;
+Mat mat5 = mat5_;
+```
+
+1.  mat5\_는 float 자료형을 사용하는 2x3 행렬, Mat\_ 클래스는 템플릿 클래스로 정의되어 있어서 저장할 원소의 자료형을 명시적으로 지정해주어야 함.
+2.  Mat\_ 클래스는 << 연산자와 콤마(,)를 이용하여 간단하게 행렬 원소 값을 설정하는 인터페이스를 제공
+3.  mat5\_의 행렬을 복사하여 Mat 클래스 타입의 변수 mat5 선언.
+
+---
+
+```
+// 비어 있는 Mat 객체 or 이미 생성된 Mat 객체에 새로운 행렬 할당
+void Mat::create ( int rows, int cols, int type );
+void Mat::create ( Size size, int type );
+```
+
+-   create() 함수의 인자로 지정한 행렬 크기, 타입이 기존과 모두 같을 경우 별다른 동작 x, 그러나 다를 경우 기존 메모리 공간 해제 후 새로운 행렬 데이터 저장을 위한 메모리 공간을 할당
+-   이 함수에는 새로 만든 행렬의 원소 값을 초기화하는 기능이 없음.
+
+---
+
+```
+// Mat 행렬의 전체 원소 값 설정
+Mat& Mat::operator = ( const Scalar& s );
+Mat& Mat::setTo ( InputArray value, InputArray mask = noArray() );
+```
+
+-   Mat 클래스는 = 연산자 재정의 또는 Mat::setTo() 멤버 함수를 이용하여 행렬 전체 원소 값을 한꺼번에 설정
+-   \=연산자 재정의
+    -   s 값은 행렬 원소에 설정할 값
+    -   반환값 : 값이 설정된 Mat 객체의 참조
+-   Mat::setTo() 멤버 함수
+    -   value : 행렬 원소에 설정할 값
+    -   mask : 마스크 행렬. 마스크 행렬의 원소가 0이 안인 위치에서만 value 값이 설정. 행렬 전체 원소 값 설정하려면 noArray() 또는 Mat()을 지정
+    -   반환값 : Mat 객체의 참조
+    
+    ### 3\. 행렬의 복사
+
+```
+// 메모리 공간을 새로 할당하여 픽셀 데이터 전체를 복사 ( 깊은복사 )
+Mat Mat::clone() const;
+
+void Mat::copyTo( OutputArray m ) const;
+void Mat::copyTo( OutputArray m, InputArray mask ) const;
+```
+
+-   clone() 함수는 자기 자신과 동일한 Mat 객체를 완전히 새로 만들어서 반환
+-   clone() 함수의 반환값은 \*this 행렬의 복사본
+-   copyTo() 함수는 인자로 전달된 m 행렬에 자기 자신을 복사함.
+    -   함수를 호출한 행렬과 인자로 전달된 행렬 m이 서로 크기와 타입이 같으면 원소 값 복사만 수행
+    -   함수를 호출한 행렬과 인자로 전달된 행렬 m이 서로 크기와 타입이 다르면 copyTo() 함수 내부에서 행렬 m을 새로 생성한 후 픽셀 값을 복사
+-   m값은 복사본이 저장될 행렬, mask는 마스크 행렬을 의미.
+-   완전히 메모리 공간을 새로 할당하여 픽셀 값을 복사하는 형태의 복사를 깊은복사라고 함.
+
+---
+
+### 4\. 부분 행렬 추출
+
+```
+// 저장된 영상에서 사각형 모양의 부분 영상 추출하는 방법
+// Mat 클래스에 정의된 괄호 연산자 재정의
+Mat Mat::operator()(const Rect& roi) const;
+Mat Mat::operator()(Range rowRange, Range colRange) const;
+```
+
+-   roi : 사각형 관심 영역
+-   rowRange, colRange : 관심 행, 열 범위
+-   반환값은 추출한 부분 행렬 또는 영상.
+-   영상 추출 예시 )
+
+```
+Mat img1 = imread("cat.bmp");
+Mat img2 = img1(Rect(220, 120, 340, 240);
+```
+
+-   부분 영상 추출 시 주의할 점으로는 픽셀 데이터를 공유하는 얕은 복사 형식이라는 점이다. 이 때문에 부분 영상 추출 후 부분 영상의 픽셀 값을 변경할 경우 추출한 부분 영상뿐 아니라 원본 영상의 픽셀 값도 같이 변경됨.
+-   얕은 복사 형식이라는 점때문에 입력 영상에 사각형 모양의 관심 영역(ROI)을 설정하는 용도로 사용 가능.
+-   ROI : 영상의 전체 영역 중 특정 영역에 대해 영상 처리를 수행할 때 설정하는 영역
+-   만약 독립된 메모리 영역 확보하여 부분 영상 추출하고자 한다면, 괄호 연산자 뒤에 Mat::clone() 함수를 함께 사용.
+
+```
+// clone() 함수를 사용하여 독립적인 공간을 사용하게 됨. 
+// 서로 다른 메모리 공간을 사용하기 때문에 img3 영상 픽셀 변경해도 img1의 변화는 x
+Mat img3 = img1(Rect(220, 120, 340, 240)).clone();
+```
+
+---
+
+```
+// Mat 행렬에서 특정 범위의 행 또는 열을 부분 행렬로 추출할 때
+Mat Mat::rowRange(int startrow, int endrow) const;
+Mat Mat::rowRange(const Range& r) const;
+
+Mat Mat::colRange(int startcol, int endcol) const;
+Mat Mat::colRange(const Range& r) const;
+
+// 하나의 행 또는 열을 추출하여 1행 또는 1열짜리 행렬을 만들고자 할 때
+Mat Mat::row(int y) const;
+Mat Mat::col(int x) const;
+```
+
+-   모두 부분 행렬을 얕은 복사 형태로 반환하기 때문에 깊은 복사를 하려면 clone() 함수와 함께 써야함.
+
+---
+
+### 5\. 행렬의 원소 값 참조
+
+**OpenCV에서 제공하는 세 가지 픽셀 값 접근 방법**
+
+**1) Mat::at() 함수**
+
+```
+// Mat::at() 함수
+template<typename_ Tp> _Tp& Mat::at(int y, int x)
+```
+
+-   가장 직관적 행렬 원소 접근 방법
+-   행과 열 2개의 정수를 인자로 받음.
+-   해당 위치의 행렬 원소값을 참조 형식으로 반환.
+-   예시)
+
+```
+Mat mat1 = Mat::zeros(3,4,CV_8UC1);		// mat1은 0으로 초기화된 3x4 행렬, 각원소는 uchar 자료형
+
+for (int j=0; j<mat1.rows; j++) {			// 행에 대한 반복
+	for (int i=0; i<mat1.cols; i++) {			// 열에 대한 반복
+   	 	// at() 함수가 행렬 원소를 참조로 반환하기 때문에 at() 함수의 반환값 변경 시, mat1 행렬 원소값도 함께 변경.
+    	mat1.at<uchar>(j, i)++;				// 자료형 명시
+     }
+}
+```
+
+[##_Image|kage@cWkv7T/btqBXFy4eVt/Av8txrEmu09uHvknXs6xm0/img.png|alignCenter|width="432" height="318" data-origin-width="0" data-origin-height="0"|||_##]
+
+---
+
+**2) Mat::ptr() 함수**
+
+```
+// Mat::ptr() 함수
+template<typename _Tp>
+_Tp* Mat:::ptr<int y)
+```
+
+-   \_Tp\* 타입으로 형변환된 y번째 행의 시작 주소를 반환.
+-   지정한 자료형의 포인터를 반환. 이 포인터로 지정한 행의 원소에 접근 가능.
+-   행단위로 행렬원소에 접근
+-   예시)
+
+```
+Mat mat1 = Mat::zeros(3,4,CV_8UC1);		// mat1은 0으로 초기화된 3x4 행렬, 각원소는 uchar 자료형
+
+for (int j=0; j<mat1.rows; j++) {			// 행에 대한 반복
+	 // p를 1차원 배열처럼 사용
+	uchar* p = mat1.ptr1<uchar>( j );		// j번째 행 원소의 시작 주소 반환. 포인터형 변수 p에 저장
+    
+	for (int i=0; i<mat1.cols; i++) {			// 열에 대한 반복
+   	 	p[i]++;
+     }
+}
+```
+
+---
+
+**3) MatIterator\_ 반복자**
+
+-   at(), ptr() 함수를 사용할 경우 함수 인자로 전달된 값이 행렬의 크기를 벗어나면 에러가 발생할 수 있음. 이 단점 보완을 위해 반복자라는 개념이 도입되었는데 이것이 MatIterator
+-   Mat::begin() 함수를 이용하면 행렬의 첫 번째 원소 위치를 얻을 수 있음.
+-   Mat::end() 함수를 이용하면 행렬의 마지막 원소 바로 다음 위치를 얻을 수 있음.
+-   ptr()에 비해 속도가 느리고, at()처럼 임의의 위치에 자유롭게 접근이 불가능하므로 사용성이 낮음.
+
+
+### 6\. 행렬 정보 참조하기
+​
+-   Mat::data 멤버 변수는 행렬 원소 데이터가 저장되어 있는 메모리 공간의 시작 주소를 가리키는 포인터.
+-   Mat 클래스 정보 참조를 위한 멤버 함수
+​
+<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-style="style14"><tbody><tr><td style="width: 50%; text-align: center;"><b>Mat 클래스 멤버 함수</b></td><td style="width: 50%; text-align: center;"><b>설명</b></td></tr><tr><td style="width: 50%;">int Mat::channels() const;</td><td style="width: 50%;">행렬의 채널 수를 반환</td></tr><tr><td style="width: 50%;">int Mat::depth() const;</td><td style="width: 50%;">행렬의 깊이를 반환합니다. (예) CV_8U</td></tr><tr><td style="width: 50%;">size_t Mat::elemSize() const;</td><td style="width: 50%;">한 개의 원소가 차지하는 메모리 크기를 바이트 단위로 반환</td></tr><tr><td style="width: 50%;">size_t Mat::elemSize1() const;</td><td style="width: 50%;">하나의 채널에서 한 개의 원소가 차지하는 메모리 크기를 바이트 단위로 반환</td></tr><tr><td style="width: 50%;">bool Mat::empty() const;</td><td style="width: 50%;">비어 있는 행렬이면 true를 반환</td></tr><tr><td style="width: 50%;">bool Mat::isContinuous() const;</td><td style="width: 50%;">각 행의 원소가 연속적으로 저장되어 있으면 true를 반환</td></tr><tr><td style="width: 50%;">bool Mat::isSubmatrix() const;</td><td style="width: 50%;">행렬이 다른 행렬의 부분 행렬이면 true를 반환</td></tr><tr><td style="width: 50%;">Size Mat::size() const;</td><td style="width: 50%;">행렬 크기를 Size 타입으로 반환</td></tr><tr><td style="width: 50%;">size_t Mat::total() const;</td><td style="width: 50%;">전체 원소 개수를 반환</td></tr><tr><td style="width: 50%;">int Mat::type() const;</td><td style="width: 50%;">행렬의 타입을 반환</td></tr></tbody></table>
+​
+---
+​
+```
+// Mat 객체에 int, float, double 같은 자료형의 행렬이 저장되어 있는 경우, 행렬 원소를 출력하는 기능
+static inline
+std::ostream& operatore << (std:: ostream& out, const Mat& mtx)
+```
+​
+-   out 인자에 C++ 표준 출력 스트림 객체 값을 넣음.
+-   C++ 표준출력 스트림 객체 참조를 반환.
+​
+---
+​
+### 7\. 행렬 연산
+​
+-   MatExpr 타입은 OpenCV에서 행렬 연산을 표현하는 용도로 사용되는 행렬 표현식 클래스
+​
+```
+// 두 행렬에서 같은 위치에 있는 원소끼리 곱셈 연산 수행
+MatExpr Mat::mul(InputArray m, double scale=1) const;
+```
+​
+-   m은 \*this 행렬과 크기 및 타입이 같은 행렬을 의미
+-   scale에는 추가적으로 곱할 값을 넣음.
+​
+---
+​
+```
+// 역행렬 구하기
+MatExpr Mat::inv(int method = DECOMP_LU) const;
+```
+​
+-   method는 역행렬 계산 방법을 의미.
+-   method에 DECOMP\_LU, DECOMP\_SVD, DECOMP\_EIG, DECOMP\_CHOLESKY 중 하나를 지정할 수 있음.
+​
+---
+​
+```
+// 전치행렬 구하기
+MatExpr Mat::t() const;
+```
+​
+-   입력 행렬이 정방행렬일 경우 행과 열의 위치만 바꿔주면 됨.
+-   입력 행렬의 크기가 M x N 일 경우 전치 행렬의 크기는 N x M 으로 변경 됨.
+​
+---
+​
+### 8\. 크기 및 타입 변환 함수
+​
+```
+// 행렬의 타입을 변경
+void Mat::convertTo( OutputArray m, int rtype, double alpha=1, double beta=0 ) const;
+```
+​
+-   추가적으로 모든 원소에 일정한 값을 더하거나 곱할 수 있음.
+-   출력 행렬인 m의 원소 값은 다음 수식에 의해 결정
+​
+[##_Image|kage@eB47UP/btqBXUpe9jl/7rv0mvdwARyAJUGpcT1zHk/img.png|alignCenter|data-origin-width="0" data-origin-height="0"|||_##]
+​
+-   rtype : 원하는 출력 행렬의 타입을 입력. 만약 rtype이 음수일 경우 출력 행렬은 입력행렬과 같은 타입.
+​
+---
+​
+```
+// 주어진 행렬 크기 또는 채널 수를 변경
+Mat Mat::reshape(int cn, int rows=0) const;
+```
+​
+-   새로운 행렬을 만드는 것이 아닌 하나의 행렬 원소 데이터를 같이 참조하는 행렬을 반환.
+-   반환된 행렬 원소 값을 변경할 시 원본 행렬의 원소 값도 함께 바뀜.
+​
+---
+​
+```
+// 행렬의 모양 변경이 아닌, 행렬의 행 크기를 변경
+void Mat::resize(size_t sz);
+void Mat::resize(size_t sz, const, Scalar& s);
+```
+​
+-   sz는 새로운 행 갯수를 의미하며, s는 새로 추가되는 행 원소의 초깃값을 의미한다.
+-   sz가 기존 행렬의 행 개수보다 작으면 아래쪽 행을 제거, 크면 아래쪽에 행을 추가.
+​
+---
+​
+```
+// 이미 존재하는 행렬에 원소 데이터를 추가하고 싶을 때
+template<typename _Tp> void Mat::push_back(const _Tp& elem);        // *this 행렬은 1열짜리 행렬이어야 함.
+template<typename _Tp> void Mat::push_back(const Mat_<_Tp>& elem);          // *this 행렬과 인자로 전달된 m 행렬의 열 개수 동일해야 함.
+template<typename _Tp> void Mat::push_back(const std::vector<_Tp>& elem);       // *this 행렬은 1열짜리 행렬이어야 함.
+void Mat::push_back(const Mat& m);          // *this 행렬과 인자로 전달된 m 행렬의 열 개수 동일해야 함.
+```
+​
+-   elem : 행렬의 맨 마지막 행에 추가할 원소 데이터
+-   m : 행렬의 맨 마지막 행에 추가할 행렬을 의미, \*this와 타입, 열 갯수 같아야 함.
+​
+---
+​
+```
+// 행렬에서 맨 아래 있는 행을 제거할 때
+void Mat::pop_back(size_t nelems=1);
+```
+​
+-   제거할 행의 갯수가 \*this 행렬의 행 갯수보다 크면 안됨.
