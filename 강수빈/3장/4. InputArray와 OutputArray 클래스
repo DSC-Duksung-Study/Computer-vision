@@ -1,0 +1,40 @@
+### 1.  InputArray 클래스
+
+-   InputArray 클래스는 다양한 타입을 표현할 수 있는 인터페이스 클래스로 주로 OpenCV 함수의 입력 인자 자료형으로 사용됨.
+
+```
+// Mat 객체뿐 아니라 vector<T> 타입의 객체를 한번에 전달받을 수 있게 만드는 함수
+Mat _InputArray::getMat(int idx=-1) const;
+```
+
+-   Mat 객체 타입 형태로 변환해서 사용할 수 있게끔 하는 함수
+-   idx에는 참조할 행 번호가 들어감. 음수일 경우 행렬 전체를 참조.
+-   예시 )
+
+```
+void InputArrayOp()
+{
+	uchar data1[] = { 1, 2, 3, 4, 5, 6 };	// uchar 타입의 배열 data1
+	Mat mat1(2, 3, CV_8UC1, data1);			// 2x3, uchar 타입의 data1 행렬
+	printMat(mat1);
+
+	vector<float> vec1 = { 1.2f, 3.4f, -2.1f };	// float 타입의 벡터 vec1
+	printMat(vec1);
+}
+
+void printMat(InputArray _mat)	// 함수의 인자로 전달받는 타입이 InputArray
+{
+	Mat mat = _mat.getMat();	// InputArray 타입의 _mat객체로부터 Mat객체 mat 생성
+	cout << mat << endl;
+}
+
+```
+
+---
+
+### 2\. OutputArray 클래스
+
+-   클래스 계층적으로 \_InputArray 클래스를 상속받아 만들어짐.
+-   새로운 행렬을 생성하는 \_OutputArray::create() 함수가 추가적으로 정의.
+-   OpenCV의 많은 영상 처리 함수는 결과 영상을 저장할 새로운 행렬을 먼저 생성 후, 영상 처리 결과를 저장하는 형태로 구현.
+-   몇몇 함수는 입력 영상 자체를 변경하여 다시 출력하는 경우가 있음. 이럴 경우 InputOutputArray 클래스를 사용.
